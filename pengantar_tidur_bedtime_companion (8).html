@@ -1,0 +1,1747 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pengantar Tidur - Bedtime Companion</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Outfit', 'sans-serif'],
+                    },
+                    colors: {
+                        night: {
+                            800: '#0f172a',
+                            900: '#090d16',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: #090d16;
+            color: #f8fafc;
+            overflow-x: hidden;
+            user-select: none;
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+
+        /* Glassmorphism Styles Refinement for Mobile */
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .glass-card:active {
+            transform: scale(0.98);
+        }
+
+        .glass-card:hover {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(255, 255, 255, 0.22);
+        }
+
+        /* Hide scrollbars for slick horizontal navigation */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        /* Background Image Slider Transition */
+        .bg-slide {
+            position: absolute;
+            inset: 0;
+            background-size: cover;
+            background-position: center;
+            transition: opacity 2.5s ease-in-out, transform 12s ease-out;
+            opacity: 0;
+            transform: scale(1.05);
+        }
+
+        .bg-slide.active {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.1);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.4);
+        }
+
+        /* Range Input Slider Styling */
+        input[type=range] {
+            -webkit-appearance: none;
+            background: rgba(255, 255, 255, 0.15);
+            height: 6px;
+            border-radius: 3px;
+            outline: none;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #38bdf8;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+            transition: transform 0.1s ease;
+        }
+
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        /* Glow effects */
+        .text-glow {
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.4);
+        }
+        .glow-blue {
+            box-shadow: 0 0 25px rgba(56, 189, 248, 0.25);
+        }
+
+        /* Hide UI transition */
+        .ui-element {
+            transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+        .ui-hidden {
+            opacity: 0 !important;
+            pointer-events: none !important;
+            transform: translateY(10px);
+        }
+    </style>
+</head>
+<body class="relative min-h-screen w-full flex flex-col justify-between overflow-hidden">
+
+    <!-- Background Image Transitions -->
+    <div id="bg-container" class="fixed inset-0 z-0">
+        <div id="bg-slide-1" class="bg-slide active"></div>
+        <div id="bg-slide-2" class="bg-slide"></div>
+        <!-- Dark Overlay for better contrast and relaxed vision -->
+        <div id="night-overlay" class="absolute inset-0 bg-black/40 transition-opacity duration-1000"></div>
+    </div>
+
+    <!-- Video Background Container (When MP4 Video mode is activated) -->
+    <video id="bg-video" class="fixed inset-0 z-0 w-full h-full object-cover hidden" loop muted playsinline></video>
+
+    <!-- Star Canvas Overlay for Night Atmosphere -->
+    <canvas id="stars-canvas" class="fixed inset-0 z-0 pointer-events-none opacity-60"></canvas>
+
+    <!-- Screen Dimmer Overlay (Sleep Timer Fade Out) -->
+    <div id="screen-dimmer" class="fixed inset-0 z-40 bg-black pointer-events-none opacity-0 transition-opacity duration-1000"></div>
+
+    <!-- TOP BAR (UI Element) -->
+    <header class="ui-element relative z-10 w-full px-4 py-3 md:p-6 flex justify-between items-center max-w-5xl mx-auto">
+        <!-- Brand / Mode Info -->
+        <div class="flex items-center space-x-2.5">
+            <div class="w-9 h-9 md:w-10 md:h-10 rounded-full glass-card flex items-center justify-center text-sky-300 shadow-lg border border-white/20">
+                <i class="fa-solid fa-moon text-base md:text-lg animate-pulse"></i>
+            </div>
+            <div>
+                <h1 class="text-base md:text-xl font-medium tracking-wide text-white flex items-center gap-1">
+                    <span class="text-sky-400 font-bold">N</span>irwana <span class="text-amber-300 font-bold">T</span>idur
+                </h1>
+                <p class="text-[11px] md:text-xs text-sky-200/80 font-light flex items-center gap-1" id="current-date">
+                    <i class="fa-regular fa-calendar-check text-sky-400"></i>
+                    <span id="header-date-text">Menyiapkan tanggal...</span>
+                </p>
+            </div>
+        </div>
+
+        <!-- Top Controls -->
+        <div class="flex items-center space-x-1.5 md:space-x-3">
+            <!-- Sleep Timer Status Badge -->
+            <div id="timer-badge" class="hidden glass-card px-2.5 py-1 rounded-full text-[11px] md:text-xs text-sky-300 items-center space-x-1.5 border border-sky-400/30 animate-pulse">
+                <i class="fa-solid fa-hourglass-half text-sky-400"></i>
+                <span id="timer-countdown">00:00</span>
+            </div>
+
+            <!-- Hide UI Toggle Button -->
+            <button id="btn-toggle-ui" title="Sembunyikan Kontrol" class="w-9 h-9 md:w-10 md:h-10 rounded-full glass-card flex items-center justify-center text-slate-200 hover:text-white active:scale-90 transition">
+                <i class="fa-solid fa-eye-slash text-xs md:text-sm"></i>
+            </button>
+
+            <!-- Fullscreen Button -->
+            <button id="btn-fullscreen" title="Layar Penuh" class="w-9 h-9 md:w-10 md:h-10 rounded-full glass-card flex items-center justify-center text-slate-200 hover:text-white active:scale-90 transition">
+                <i class="fa-solid fa-expand text-xs md:text-sm"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- MAIN CENTER DISPLAY (Clock & Relaxing Quotes) -->
+    <main class="relative z-10 my-auto flex flex-col items-center justify-center text-center px-4 py-4 md:py-8 pointer-events-none">
+        <!-- Big Glass Clock -->
+        <div id="clock-container" class="pointer-events-auto cursor-pointer group mb-1 md:mb-2 active:scale-95 transition-transform duration-200">
+            <div id="clock" class="text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-extralight tracking-tighter text-white text-glow transition-all duration-300">
+                00:00<span class="text-xl sm:text-2xl md:text-4xl text-sky-300/90 font-light ml-1.5 md:ml-2">00</span>
+            </div>
+        </div>
+
+        <!-- Prominent Day & Date Display with Colored Initial Word Accents -->
+        <div id="main-date-display" class="glass-card px-4 py-1 md:px-5 md:py-1.5 rounded-full mb-3 md:mb-4 text-xs sm:text-sm md:text-base font-normal tracking-wide text-slate-100 shadow-lg border border-white/10 pointer-events-auto flex items-center space-x-1.5">
+            <i class="fa-regular fa-calendar-days text-amber-300 mr-1 text-xs md:text-sm"></i>
+            <span id="hero-day-date">Memuat Hari & Tanggal...</span>
+        </div>
+
+        <!-- Bedtime Quote / Affirmation -->
+        <div class="glass-panel px-4 py-2.5 md:px-6 md:py-3 rounded-2xl md:rounded-full max-w-md md:max-w-xl text-[11px] sm:text-xs md:text-sm text-slate-200/90 font-light shadow-2xl backdrop-blur-md border border-white/15 pointer-events-auto leading-relaxed">
+            <i class="fa-solid fa-quote-left text-sky-400/60 mr-1.5"></i>
+            <span id="quote-text">Istirahatkan pikiranmu. Hari ini telah usai, esok membawa harapan baru.</span>
+            <i class="fa-solid fa-quote-right text-sky-400/60 ml-1.5"></i>
+        </div>
+    </main>
+
+    <!-- BOTTOM FLOATING DOCK & CONTROLS -->
+    <footer class="ui-element relative z-20 w-full px-2 pb-3 md:pb-6 flex flex-col items-center max-w-3xl mx-auto">
+        <!-- Navigation Tabs (Scrollable on Mobile) -->
+        <div class="glass-panel p-1.5 md:p-2 rounded-2xl md:rounded-3xl flex items-center space-x-1.5 md:space-x-3 mb-2 md:mb-4 shadow-2xl border border-white/20 w-full max-w-full overflow-x-auto no-scrollbar justify-start sm:justify-center">
+            <button id="tab-btn-ambient" class="tab-btn active px-3 py-2 md:px-4 md:py-2 rounded-xl text-xs font-medium transition shrink-0 flex items-center space-x-1.5 bg-sky-500/20 text-sky-300 border border-sky-400/30">
+                <i class="fa-solid fa-wind text-xs md:text-sm"></i>
+                <span class="whitespace-nowrap"><span class="text-sky-400 font-bold">S</span>uara <span class="text-emerald-300 font-bold">A</span>lam</span>
+            </button>
+
+            <button id="tab-btn-media" class="tab-btn px-3 py-2 md:px-4 md:py-2 rounded-xl text-xs font-medium transition shrink-0 flex items-center space-x-1.5 text-slate-300 hover:text-white hover:bg-white/5">
+                <i class="fa-solid fa-music text-xs md:text-sm"></i>
+                <span class="whitespace-nowrap"><span class="text-indigo-400 font-bold">P</span>emutar <span class="text-amber-300 font-bold">M</span>edia</span>
+            </button>
+
+            <button id="tab-btn-landscape" class="tab-btn px-3 py-2 md:px-4 md:py-2 rounded-xl text-xs font-medium transition shrink-0 flex items-center space-x-1.5 text-slate-300 hover:text-white hover:bg-white/5">
+                <i class="fa-solid fa-image text-xs md:text-sm"></i>
+                <span class="whitespace-nowrap"><span class="text-emerald-400 font-bold">P</span>emandangan</span>
+            </button>
+
+            <button id="tab-btn-timer" class="tab-btn px-3 py-2 md:px-4 md:py-2 rounded-xl text-xs font-medium transition shrink-0 flex items-center space-x-1.5 text-slate-300 hover:text-white hover:bg-white/5">
+                <i class="fa-solid fa-clock text-xs md:text-sm"></i>
+                <span class="whitespace-nowrap"><span class="text-rose-400 font-bold">P</span>engatur <span class="text-purple-300 font-bold">W</span>aktu</span>
+            </button>
+        </div>
+
+        <!-- TAB CONTENT PANELS (Mobile Bottom Sheet Feel) -->
+        <div class="w-full">
+            <!-- TAB 1: AMBIENT SOUND MIXER -->
+            <div id="panel-ambient" class="tab-panel glass-panel p-3.5 md:p-5 rounded-3xl space-y-3 md:space-y-4 max-h-[58vh] sm:max-h-none overflow-y-auto no-scrollbar">
+                <!-- Mobile Drag Indicator Pill -->
+                <div class="w-10 h-1 bg-white/20 rounded-full mx-auto mb-1 sm:hidden"></div>
+
+                <div class="flex justify-between items-center mb-1">
+                    <h3 class="text-xs md:text-sm font-semibold text-white tracking-wide flex items-center gap-1.5">
+                        <i class="fa-solid fa-sliders text-sky-400"></i>
+                        <span><span class="text-sky-400 font-bold">M</span>ix <span class="text-amber-300 font-bold">S</span>uara <span class="text-emerald-300 font-bold">R</span>elaksasi</span>
+                    </h3>
+                    <button id="btn-stop-all-sounds" class="text-[11px] md:text-xs text-rose-300/90 hover:text-rose-200 transition bg-rose-500/10 hover:bg-rose-500/20 px-2.5 py-1 rounded-full border border-rose-500/20 active:scale-95">
+                        <i class="fa-solid fa-power-off mr-1"></i> <span class="text-rose-400 font-bold">M</span>atikan
+                    </button>
+                </div>
+
+                <!-- Sound Sliders Grid (Single column on mobile, dual on desktop) -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-3 text-xs">
+                    <!-- Hujan -->
+                    <div class="glass-card p-2.5 md:p-3 rounded-2xl flex items-center space-x-3">
+                        <button id="btn-sound-rain" class="sound-toggle w-9 h-9 rounded-xl bg-slate-800/80 flex items-center justify-center text-slate-400 hover:text-sky-300 transition shrink-0 active:scale-90">
+                            <i class="fa-solid fa-cloud-showers-heavy text-sm md:text-base"></i>
+                        </button>
+                        <div class="flex-1 space-y-1">
+                            <div class="flex justify-between text-slate-200 text-[11px] md:text-xs">
+                                <span>Suara Hujan</span>
+                                <span id="vol-txt-rain" class="text-slate-400 font-mono">0%</span>
+                            </div>
+                            <input type="range" id="vol-rain" min="0" max="100" value="0" class="w-full accent-sky-400">
+                        </div>
+                    </div>
+
+                    <!-- Angin -->
+                    <div class="glass-card p-2.5 md:p-3 rounded-2xl flex items-center space-x-3">
+                        <button id="btn-sound-wind" class="sound-toggle w-9 h-9 rounded-xl bg-slate-800/80 flex items-center justify-center text-slate-400 hover:text-sky-300 transition shrink-0 active:scale-90">
+                            <i class="fa-solid fa-wind text-sm md:text-base"></i>
+                        </button>
+                        <div class="flex-1 space-y-1">
+                            <div class="flex justify-between text-slate-200 text-[11px] md:text-xs">
+                                <span>Angin Malam</span>
+                                <span id="vol-txt-wind" class="text-slate-400 font-mono">0%</span>
+                            </div>
+                            <input type="range" id="vol-wind" min="0" max="100" value="0" class="w-full accent-sky-400">
+                        </div>
+                    </div>
+
+                    <!-- Gemuruh Petir -->
+                    <div class="glass-card p-2.5 md:p-3 rounded-2xl flex items-center space-x-3">
+                        <button id="btn-sound-thunder" class="sound-toggle w-9 h-9 rounded-xl bg-slate-800/80 flex items-center justify-center text-slate-400 hover:text-sky-300 transition shrink-0 active:scale-90">
+                            <i class="fa-solid fa-bolt text-sm md:text-base"></i>
+                        </button>
+                        <div class="flex-1 space-y-1">
+                            <div class="flex justify-between text-slate-200 text-[11px] md:text-xs">
+                                <span>Petir Halus</span>
+                                <span id="vol-txt-thunder" class="text-slate-400 font-mono">0%</span>
+                            </div>
+                            <input type="range" id="vol-thunder" min="0" max="100" value="0" class="w-full accent-sky-400">
+                        </div>
+                    </div>
+
+                    <!-- Ombak Laut -->
+                    <div class="glass-card p-2.5 md:p-3 rounded-2xl flex items-center space-x-3">
+                        <button id="btn-sound-waves" class="sound-toggle w-9 h-9 rounded-xl bg-slate-800/80 flex items-center justify-center text-slate-400 hover:text-sky-300 transition shrink-0 active:scale-90">
+                            <i class="fa-solid fa-water text-sm md:text-base"></i>
+                        </button>
+                        <div class="flex-1 space-y-1">
+                            <div class="flex justify-between text-slate-200 text-[11px] md:text-xs">
+                                <span>Deru Ombak</span>
+                                <span id="vol-txt-waves" class="text-slate-400 font-mono">0%</span>
+                            </div>
+                            <input type="range" id="vol-waves" min="0" max="100" value="0" class="w-full accent-sky-400">
+                        </div>
+                    </div>
+
+                    <!-- Api Unggun -->
+                    <div class="glass-card p-2.5 md:p-3 rounded-2xl flex items-center space-x-3">
+                        <button id="btn-sound-fire" class="sound-toggle w-9 h-9 rounded-xl bg-slate-800/80 flex items-center justify-center text-slate-400 hover:text-amber-300 transition shrink-0 active:scale-90">
+                            <i class="fa-solid fa-fire text-sm md:text-base"></i>
+                        </button>
+                        <div class="flex-1 space-y-1">
+                            <div class="flex justify-between text-slate-200 text-[11px] md:text-xs">
+                                <span>Api Unggun</span>
+                                <span id="vol-txt-fire" class="text-slate-400 font-mono">0%</span>
+                            </div>
+                            <input type="range" id="vol-fire" min="0" max="100" value="0" class="w-full accent-amber-400">
+                        </div>
+                    </div>
+
+                    <!-- Jangkrik -->
+                    <div class="glass-card p-2.5 md:p-3 rounded-2xl flex items-center space-x-3">
+                        <button id="btn-sound-crickets" class="sound-toggle w-9 h-9 rounded-xl bg-slate-800/80 flex items-center justify-center text-slate-400 hover:text-emerald-300 transition shrink-0 active:scale-90">
+                            <i class="fa-solid fa-bug text-sm md:text-base"></i>
+                        </button>
+                        <div class="flex-1 space-y-1">
+                            <div class="flex justify-between text-slate-200 text-[11px] md:text-xs">
+                                <span>Jangkrik Malam</span>
+                                <span id="vol-txt-crickets" class="text-slate-400 font-mono">0%</span>
+                            </div>
+                            <input type="range" id="vol-crickets" min="0" max="100" value="0" class="w-full accent-emerald-400">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2: MP3 & MP4 PLAYER -->
+            <div id="panel-media" class="tab-panel glass-panel p-3.5 md:p-5 rounded-3xl space-y-3 hidden max-h-[60vh] sm:max-h-none overflow-y-auto no-scrollbar">
+                <!-- Mobile Drag Indicator Pill -->
+                <div class="w-10 h-1 bg-white/20 rounded-full mx-auto mb-1 sm:hidden"></div>
+
+                <div class="flex flex-wrap justify-between items-center gap-2">
+                    <h3 class="text-xs md:text-sm font-semibold text-white tracking-wide flex items-center gap-1.5">
+                        <i class="fa-solid fa-play-circle text-sky-400"></i> Pemutar Media
+                    </h3>
+                    <div class="flex items-center space-x-1.5">
+                        <button id="btn-demo-music" class="bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 px-2.5 py-1 rounded-full text-[11px] font-medium border border-indigo-400/30 transition flex items-center space-x-1 active:scale-95">
+                            <i class="fa-solid fa-wand-magic-sparkles text-[10px]"></i>
+                            <span id="demo-music-text">Musik Demo</span>
+                        </button>
+                        <label class="cursor-pointer bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 px-2.5 py-1 rounded-full text-[11px] font-medium border border-sky-400/30 transition flex items-center space-x-1 active:scale-95">
+                            <i class="fa-solid fa-upload text-[10px]"></i>
+                            <span>Upload MP3/MP4</span>
+                            <input type="file" id="media-file-input" accept="audio/*,video/*" multiple class="hidden">
+                        </label>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-start">
+                    <div class="md:col-span-6 space-y-3 w-full">
+                        <!-- Spectrum Canvas -->
+                        <div class="relative w-full rounded-2xl overflow-hidden glass-card p-2.5 border border-white/10 flex flex-col items-center">
+                            <div class="w-full flex justify-between items-center mb-1.5 text-[10px] md:text-[11px] text-slate-300 px-0.5">
+                                <span class="flex items-center gap-1"><i class="fa-solid fa-chart-simple text-sky-400"></i> Spektrum Audio</span>
+                                <button id="btn-spectrum-style" class="hover:text-sky-300 transition bg-white/5 px-2 py-0.5 rounded-md border border-white/10">Mode: <span id="spectrum-mode-label" class="font-semibold text-sky-400">Batang Neon</span></button>
+                            </div>
+                            <canvas id="spectrum-canvas" class="w-full h-20 md:h-24 rounded-xl bg-black/50 border border-white/5 block"></canvas>
+                        </div>
+
+                        <!-- Player Controls Box -->
+                        <div class="glass-card p-3 rounded-2xl flex flex-col items-center space-y-2 text-center">
+                            <div id="media-title" class="text-[11px] md:text-xs font-medium text-slate-200 truncate max-w-full">
+                                Pilih file MP3/MP4 atau putar Musik Demo.
+                            </div>
+
+                            <div class="w-full flex items-center space-x-2 text-[10px] md:text-xs text-slate-400">
+                                <span id="media-current-time" class="font-mono">00:00</span>
+                                <input type="range" id="media-seek" value="0" min="0" max="100" class="flex-1 accent-sky-400">
+                                <span id="media-duration" class="font-mono">00:00</span>
+                            </div>
+
+                            <div class="w-full flex items-center justify-between gap-2 pt-1">
+                                <div class="flex items-center space-x-3 mx-auto sm:mx-0">
+                                    <button id="btn-media-prev" class="text-slate-400 hover:text-white transition active:scale-90 p-1">
+                                        <i class="fa-solid fa-backward-step text-sm md:text-base"></i>
+                                    </button>
+                                    <button id="btn-media-play" class="w-9 h-9 md:w-10 md:h-10 rounded-full bg-sky-400 text-slate-950 flex items-center justify-center font-bold shadow-lg active:scale-90 transition">
+                                        <i class="fa-solid fa-play text-sm md:text-base ml-0.5" id="media-play-icon"></i>
+                                    </button>
+                                    <button id="btn-media-next" class="text-slate-400 hover:text-white transition active:scale-90 p-1">
+                                        <i class="fa-solid fa-forward-step text-sm md:text-base"></i>
+                                    </button>
+                                </div>
+
+                                <div class="flex items-center space-x-1.5 text-xs text-slate-300">
+                                    <button id="btn-media-mute" class="text-slate-400 hover:text-sky-300 transition w-4">
+                                        <i class="fa-solid fa-volume-high text-xs" id="media-mute-icon"></i>
+                                    </button>
+                                    <input type="range" id="media-volume" min="0" max="100" value="80" class="w-16 sm:w-20 accent-sky-400">
+                                    <span id="media-vol-text" class="w-7 text-right text-slate-400 font-mono text-[10px]">80%</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Video Preview -->
+                        <div id="video-preview-wrapper" class="relative rounded-2xl overflow-hidden glass-card border border-white/10 hidden">
+                            <div class="absolute top-2 right-2 z-10">
+                                <button id="btn-video-bg-toggle" class="bg-black/60 hover:bg-black/80 text-white text-[10px] px-2 py-1 rounded-full backdrop-blur-md transition">
+                                    <i class="fa-solid fa-desktop mr-1"></i> Latar Belakang
+                                </button>
+                            </div>
+                            <video id="video-player" class="w-full max-h-36 object-contain bg-black/40" crossorigin="anonymous"></video>
+                        </div>
+                    </div>
+
+                    <!-- Playlist Container -->
+                    <div class="md:col-span-6 w-full">
+                        <div id="playlist-container" class="glass-card p-3 rounded-2xl border border-white/10 hidden flex flex-col max-h-48 md:max-h-72">
+                            <div class="flex justify-between items-center text-[11px] text-slate-300 pb-2 border-b border-white/10 shrink-0">
+                                <span class="font-semibold text-sky-300 flex items-center gap-1">
+                                    <i class="fa-solid fa-list-ul"></i> Playlist (<span id="playlist-count" class="text-amber-300">0</span>)
+                                </span>
+                                <button id="btn-clear-playlist" class="text-[10px] text-rose-300/80 hover:text-rose-200 transition bg-rose-500/10 px-2 py-0.5 rounded border border-rose-500/20">
+                                    Kosongkan
+                                </button>
+                            </div>
+                            <ul id="playlist-items-list" class="space-y-1 text-xs overflow-y-auto no-scrollbar pt-1.5 flex-1"></ul>
+                        </div>
+                    </div>
+                </div>
+
+                <audio id="audio-player" class="hidden" crossorigin="anonymous"></audio>
+            </div>
+
+            <!-- TAB 3: LANDSCAPE BACKGROUNDS -->
+            <div id="panel-landscape" class="tab-panel glass-panel p-3.5 md:p-5 rounded-3xl space-y-3 hidden max-h-[58vh] sm:max-h-none overflow-y-auto no-scrollbar">
+                <!-- Mobile Drag Indicator Pill -->
+                <div class="w-10 h-1 bg-white/20 rounded-full mx-auto mb-1 sm:hidden"></div>
+
+                <div class="flex justify-between items-center">
+                    <h3 class="text-xs md:text-sm font-semibold text-white tracking-wide flex items-center gap-1.5">
+                        <i class="fa-solid fa-images text-sky-400"></i> Galeri Pemandangan
+                    </h3>
+                    <label class="flex items-center cursor-pointer text-[11px] text-slate-300 space-x-1.5">
+                        <span>Otomatis</span>
+                        <input type="checkbox" id="auto-bg-toggle" checked class="sr-only peer">
+                        <div class="w-8 h-4 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-sky-500 relative"></div>
+                    </label>
+                </div>
+
+                <!-- Landscape Cards Grid -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    <button class="bg-card-preset group relative rounded-xl overflow-hidden h-16 sm:h-20 border border-white/10 text-left transition active:scale-95" data-bg="rain-cabin">
+                        <img src="https://images.unsplash.com/photo-1518837695005-2083093ee35b?auto=format&fit=crop&w=300&q=80" class="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition duration-500" alt="Hujan">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent p-1.5 flex items-end">
+                            <span class="text-[11px] font-medium text-white truncate">Pondok Hujan</span>
+                        </div>
+                    </button>
+
+                    <button class="bg-card-preset group relative rounded-xl overflow-hidden h-16 sm:h-20 border border-white/10 text-left transition active:scale-95" data-bg="night-lake">
+                        <img src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=300&q=80" class="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition duration-500" alt="Pantai">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent p-1.5 flex items-end">
+                            <span class="text-[11px] font-medium text-white truncate">Pantai Malam</span>
+                        </div>
+                    </button>
+
+                    <button class="bg-card-preset group relative rounded-xl overflow-hidden h-16 sm:h-20 border border-white/10 text-left transition active:scale-95" data-bg="aurora">
+                        <img src="https://images.unsplash.com/photo-1531366936337-7c912a4589a7?auto=format&fit=crop&w=300&q=80" class="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition duration-500" alt="Aurora">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent p-1.5 flex items-end">
+                            <span class="text-[11px] font-medium text-white truncate">Aurora</span>
+                        </div>
+                    </button>
+
+                    <button class="bg-card-preset group relative rounded-xl overflow-hidden h-16 sm:h-20 border border-white/10 text-left transition active:scale-95" data-bg="pine-forest">
+                        <img src="https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=300&q=80" class="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition duration-500" alt="Hutan">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent p-1.5 flex items-end">
+                            <span class="text-[11px] font-medium text-white truncate">Hutan Pinus</span>
+                        </div>
+                    </button>
+
+                    <button class="bg-card-preset group relative rounded-xl overflow-hidden h-16 sm:h-20 border border-white/10 text-left transition active:scale-95" data-bg="mountain-stars">
+                        <img src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=300&q=80" class="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition duration-500" alt="Gunung">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent p-1.5 flex items-end">
+                            <span class="text-[11px] font-medium text-white truncate">Gunung Bintang</span>
+                        </div>
+                    </button>
+
+                    <button class="bg-card-preset group relative rounded-xl overflow-hidden h-16 sm:h-20 border border-white/10 text-left transition active:scale-95" data-bg="cozy-fireplace">
+                        <img src="https://images.unsplash.com/photo-1542296332-2e4473faf563?auto=format&fit=crop&w=300&q=80" class="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition duration-500" alt="Api Unggun">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent p-1.5 flex items-end">
+                            <span class="text-[11px] font-medium text-white truncate">Kehangatan</span>
+                        </div>
+                    </button>
+
+                    <button class="bg-card-preset group relative rounded-xl overflow-hidden h-16 sm:h-20 border border-white/10 text-left transition active:scale-95" data-bg="misty-river">
+                        <img src="https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&w=300&q=80" class="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition duration-500" alt="Kabut">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent p-1.5 flex items-end">
+                            <span class="text-[11px] font-medium text-white truncate">Lembah Kabut</span>
+                        </div>
+                    </button>
+
+                    <button class="bg-card-preset group relative rounded-xl overflow-hidden h-16 sm:h-20 border border-white/10 text-left transition active:scale-95" data-bg="sunset-calm">
+                        <img src="https://images.unsplash.com/photo-1495616811223-4d98c6e9c869?auto=format&fit=crop&w=300&q=80" class="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition duration-500" alt="Senja">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent p-1.5 flex items-end">
+                            <span class="text-[11px] font-medium text-white truncate">Senja Tenang</span>
+                        </div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- TAB 4: SLEEP TIMER -->
+            <div id="panel-timer" class="tab-panel glass-panel p-3.5 md:p-5 rounded-3xl space-y-3 hidden">
+                <!-- Mobile Drag Indicator Pill -->
+                <div class="w-10 h-1 bg-white/20 rounded-full mx-auto mb-1 sm:hidden"></div>
+
+                <div class="flex justify-between items-center">
+                    <h3 class="text-xs md:text-sm font-semibold text-white tracking-wide flex items-center gap-1.5">
+                        <i class="fa-solid fa-moon text-sky-400"></i> Pengatur Waktu Tidur
+                    </h3>
+                    <span id="timer-status-text" class="text-[11px] text-slate-400">Timer mati</span>
+                </div>
+
+                <div class="grid grid-cols-4 gap-1.5 md:gap-2">
+                    <button class="btn-timer-preset py-2 md:py-2.5 rounded-xl glass-card text-xs font-medium text-slate-200 hover:text-sky-300 transition active:scale-95" data-minutes="15">
+                        15m
+                    </button>
+                    <button class="btn-timer-preset py-2 md:py-2.5 rounded-xl glass-card text-xs font-medium text-slate-200 hover:text-sky-300 transition active:scale-95" data-minutes="30">
+                        30m
+                    </button>
+                    <button class="btn-timer-preset py-2 md:py-2.5 rounded-xl glass-card text-xs font-medium text-slate-200 hover:text-sky-300 transition active:scale-95" data-minutes="45">
+                        45m
+                    </button>
+                    <button class="btn-timer-preset py-2 md:py-2.5 rounded-xl glass-card text-xs font-medium text-slate-200 hover:text-sky-300 transition active:scale-95" data-minutes="60">
+                        60m
+                    </button>
+                </div>
+
+                <div class="flex items-center space-x-2 pt-1">
+                    <input type="number" id="custom-timer-input" placeholder="Menit kustom..." min="1" max="300" class="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-400">
+                    <button id="btn-start-custom-timer" class="bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 border border-sky-400/30 px-3 py-2 rounded-xl text-xs font-medium transition active:scale-95">
+                        Mulai
+                    </button>
+                    <button id="btn-cancel-timer" class="bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-400/30 px-3 py-2 rounded-xl text-xs font-medium transition hidden active:scale-95">
+                        Batalkan
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </footer>
+
+    <script>
+        // --- PRESET LANDSCAPE IMAGES ---
+        const LANDSCAPE_PRESETS = {
+            'rain-cabin': 'https://images.unsplash.com/photo-1518837695005-2083093ee35b?auto=format&fit=crop&w=1920&q=80',
+            'night-lake': 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1920&q=80',
+            'aurora': 'https://images.unsplash.com/photo-1531366936337-7c912a4589a7?auto=format&fit=crop&w=1920&q=80',
+            'pine-forest': 'https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=1920&q=80',
+            'mountain-stars': 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1920&q=80',
+            'cozy-fireplace': 'https://images.unsplash.com/photo-1542296332-2e4473faf563?auto=format&fit=crop&w=1920&q=80',
+            'misty-river': 'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&w=1920&q=80',
+            'sunset-calm': 'https://images.unsplash.com/photo-1495616811223-4d98c6e9c869?auto=format&fit=crop&w=1920&q=80'
+        };
+
+        const BEDTIME_QUOTES = [
+            "Istirahatkan pikiranmu. Hari ini telah usai, esok membawa harapan baru.",
+            "Tutup matamu dan biarkan keheningan malam menenangkan jiwamu.",
+            "Semua kekhawatiran hari ini biarlah larut bersama malam yang damai.",
+            "Napas perlahan, rasakan ketenangan, dan biarkan dirimu terlelap.",
+            "Setiap malam adalah kesempatan untuk memperbarui energi dan pikiran.",
+            "Mimpi indah menunggumu di balik keheningan malam ini."
+        ];
+
+        // --- GLOBAL STATE ---
+        let bgKeys = Object.keys(LANDSCAPE_PRESETS);
+        let currentBgIndex = 0;
+        let activeBgSlide = 1;
+        let autoBgInterval = null;
+        let autoBgEnabled = true;
+
+        // UI Hide State
+        let isUiHidden = false;
+
+        // Sleep Timer State
+        let sleepTimerInterval = null;
+        let timerSecondsRemaining = 0;
+
+        // --- WEB AUDIO API AMBIENT SOUND GENERATOR ---
+        let audioCtx = null;
+        let mainAnalyser = null;
+        let isAudioConnected = false;
+
+        function getAudioContext() {
+            if (!audioCtx) {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                audioCtx = new AudioContext();
+
+                mainAnalyser = audioCtx.createAnalyser();
+                mainAnalyser.fftSize = 128;
+                mainAnalyser.smoothingTimeConstant = 0.8;
+                mainAnalyser.connect(audioCtx.destination);
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            return audioCtx;
+        }
+
+        // Helper to route audio nodes to visualizer
+        function connectToAnalyser(node) {
+            const ctx = getAudioContext();
+            if (mainAnalyser && node) {
+                try {
+                    node.connect(mainAnalyser);
+                } catch(e) {}
+            }
+        }
+
+        // Sound Engine Nodes & Gains
+        const soundNodes = {
+            rain: { gain: null, source: null },
+            wind: { gain: null, source: null },
+            thunder: { gain: null, source: null },
+            waves: { gain: null, source: null },
+            fire: { gain: null, source: null },
+            crickets: { gain: null, source: null }
+        };
+
+        // Create Noise Buffer Helper
+        function createNoiseBuffer(ctx, duration = 3) {
+            const bufferSize = ctx.sampleRate * duration;
+            const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) {
+                data[i] = Math.random() * 2 - 1;
+            }
+            return buffer;
+        }
+
+        // Rain Audio Generator
+        function initRainSound() {
+            const ctx = getAudioContext();
+            const noise = ctx.createBufferSource();
+            noise.buffer = createNoiseBuffer(ctx);
+            noise.loop = true;
+
+            const filter = ctx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.value = 1200;
+
+            const gain = ctx.createGain();
+            gain.gain.value = 0;
+
+            noise.connect(filter);
+            filter.connect(gain);
+            gain.connect(mainAnalyser);
+            noise.start();
+
+            soundNodes.rain.gain = gain;
+            soundNodes.rain.source = noise;
+        }
+
+        // Wind Audio Generator
+        function initWindSound() {
+            const ctx = getAudioContext();
+            const noise = ctx.createBufferSource();
+            noise.buffer = createNoiseBuffer(ctx);
+            noise.loop = true;
+
+            const filter = ctx.createBiquadFilter();
+            filter.type = 'bandpass';
+            filter.frequency.value = 400;
+            filter.Q.value = 3.0;
+
+            const lfo = ctx.createOscillator();
+            lfo.frequency.value = 0.2; 
+            const lfoGain = ctx.createGain();
+            lfoGain.gain.value = 250;
+            lfo.connect(lfoGain);
+            lfoGain.connect(filter.frequency);
+            lfo.start();
+
+            const gain = ctx.createGain();
+            gain.gain.value = 0;
+
+            noise.connect(filter);
+            filter.connect(gain);
+            gain.connect(mainAnalyser);
+            noise.start();
+
+            soundNodes.wind.gain = gain;
+            soundNodes.wind.source = noise;
+        }
+
+        // Waves Audio Generator
+        function initWavesSound() {
+            const ctx = getAudioContext();
+            const noise = ctx.createBufferSource();
+            noise.buffer = createNoiseBuffer(ctx);
+            noise.loop = true;
+
+            const filter = ctx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.value = 600;
+
+            // Node gain perantara untuk efek gelombang pasang-surut (LFO)
+            const waveGain = ctx.createGain();
+            waveGain.gain.value = 0.5;
+
+            const lfo = ctx.createOscillator();
+            lfo.frequency.value = 0.12;
+            const lfoGain = ctx.createGain();
+            lfoGain.gain.value = 0.4;
+            lfo.connect(lfoGain);
+            lfoGain.connect(waveGain.gain);
+            lfo.start();
+
+            // Node master volume khusus ombak agar bisa dimatikan sempurna (0%)
+            const masterGain = ctx.createGain();
+            masterGain.gain.value = 0;
+
+            noise.connect(filter);
+            filter.connect(waveGain);
+            waveGain.connect(masterGain);
+            masterGain.connect(mainAnalyser);
+            noise.start();
+
+            soundNodes.waves.gain = masterGain;
+            soundNodes.waves.source = noise;
+        }
+
+        // Fire Crackle Generator
+        function initFireSound() {
+            const ctx = getAudioContext();
+            const noise = ctx.createBufferSource();
+            noise.buffer = createNoiseBuffer(ctx);
+            noise.loop = true;
+
+            const filter = ctx.createBiquadFilter();
+            filter.type = 'bandpass';
+            filter.frequency.value = 2500;
+
+            const gain = ctx.createGain();
+            gain.gain.value = 0;
+
+            noise.connect(filter);
+            filter.connect(gain);
+            gain.connect(mainAnalyser);
+            noise.start();
+
+            soundNodes.fire.gain = gain;
+            soundNodes.fire.source = noise;
+        }
+
+        // Crickets Sound Generator
+        function initCricketsSound() {
+            const ctx = getAudioContext();
+            const osc = ctx.createOscillator();
+            osc.type = 'sine';
+            osc.frequency.value = 4500;
+
+            const modOsc = ctx.createOscillator();
+            modOsc.frequency.value = 45;
+
+            const modGain = ctx.createGain();
+            modGain.gain.value = 500;
+            modOsc.connect(modGain);
+            modGain.connect(osc.frequency);
+
+            const gain = ctx.createGain();
+            gain.gain.value = 0;
+
+            osc.connect(gain);
+            gain.connect(mainAnalyser);
+            osc.start();
+            modOsc.start();
+
+            soundNodes.crickets.gain = gain;
+            soundNodes.crickets.source = osc;
+        }
+
+        // Thunder Sound Generator
+        function initThunderSound() {
+            const ctx = getAudioContext();
+            const noise = ctx.createBufferSource();
+            noise.buffer = createNoiseBuffer(ctx);
+            noise.loop = true;
+
+            const filter = ctx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.value = 200;
+
+            const gain = ctx.createGain();
+            gain.gain.value = 0;
+
+            noise.connect(filter);
+            filter.connect(gain);
+            gain.connect(mainAnalyser);
+            noise.start();
+
+            soundNodes.thunder.gain = gain;
+            soundNodes.thunder.source = noise;
+        }
+
+        // Initialize Audio Node on Demand
+        function setAmbientVolume(type, valPercent) {
+            const ctx = getAudioContext();
+            if (!soundNodes[type].gain) {
+                if (type === 'rain') initRainSound();
+                if (type === 'wind') initWindSound();
+                if (type === 'waves') initWavesSound();
+                if (type === 'fire') initFireSound();
+                if (type === 'crickets') initCricketsSound();
+                if (type === 'thunder') initThunderSound();
+            }
+
+            const masterGain = valPercent / 100;
+            if (soundNodes[type].gain) {
+                soundNodes[type].gain.gain.setTargetAtTime(masterGain * 0.4, ctx.currentTime, 0.1);
+            }
+        }
+
+        // --- SYNTHESIZED RELAXING DEMO MUSIC GENERATOR ---
+        let demoSynthInterval = null;
+        let isDemoPlaying = false;
+        let demoMasterGain = null;
+
+        function startDemoLullaby() {
+            const ctx = getAudioContext();
+            isDemoPlaying = true;
+
+            if (!demoMasterGain) {
+                demoMasterGain = ctx.createGain();
+                demoMasterGain.gain.value = 0.25;
+                demoMasterGain.connect(mainAnalyser);
+            }
+
+            // Peaceful Pentatonic Sleep Scale Frequencies (Hz)
+            const scale = [261.63, 293.66, 329.63, 392.00, 440.00, 523.25, 587.33, 659.25];
+
+            function playNote() {
+                if (!isDemoPlaying) return;
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+
+                osc.type = 'sine';
+                const freq = scale[Math.floor(Math.random() * scale.length)];
+                osc.frequency.setValueAtTime(freq, ctx.currentTime);
+
+                gain.gain.setValueAtTime(0, ctx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.15, ctx.currentTime + 0.8);
+                gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 3.5);
+
+                osc.connect(gain);
+                gain.connect(demoMasterGain);
+
+                osc.start();
+                osc.stop(ctx.currentTime + 3.6);
+            }
+
+            demoSynthInterval = setInterval(playNote, 1800);
+            playNote();
+        }
+
+        function stopDemoLullaby() {
+            isDemoPlaying = false;
+            if (demoSynthInterval) clearInterval(demoSynthInterval);
+        }
+
+        // --- LOCAL MEDIA PLAYER (MP3 / MP4) LOGIC ---
+        const audioPlayer = document.getElementById('audio-player');
+        const videoPlayer = document.getElementById('video-player');
+        const bgVideo = document.getElementById('bg-video');
+        const mediaInput = document.getElementById('media-file-input');
+        const btnMediaPlay = document.getElementById('btn-media-play');
+        const mediaPlayIcon = document.getElementById('media-play-icon');
+        const mediaTitle = document.getElementById('media-title');
+        const mediaSeek = document.getElementById('media-seek');
+        const mediaCurrentTime = document.getElementById('media-current-time');
+        const mediaDuration = document.getElementById('media-duration');
+        const videoPreviewWrapper = document.getElementById('video-preview-wrapper');
+        const btnVideoBgToggle = document.getElementById('btn-video-bg-toggle');
+        const btnDemoMusic = document.getElementById('btn-demo-music');
+        const demoMusicText = document.getElementById('demo-music-text');
+        const btnMediaPrev = document.getElementById('btn-media-prev');
+        const btnMediaNext = document.getElementById('btn-media-next');
+
+        // Playlist UI elements
+        const playlistContainer = document.getElementById('playlist-container');
+        const playlistItemsList = document.getElementById('playlist-items-list');
+        const playlistCount = document.getElementById('playlist-count');
+        const btnClearPlaylist = document.getElementById('btn-clear-playlist');
+
+        // Volume controls
+        const mediaVolumeSlider = document.getElementById('media-volume');
+        const mediaVolText = document.getElementById('media-vol-text');
+        const btnMediaMute = document.getElementById('btn-media-mute');
+        const mediaMuteIcon = document.getElementById('media-mute-icon');
+
+        let isVideoMode = false;
+        let isVideoBgActive = false;
+        let lastVolumeValue = 0.8;
+        let audioSourceNode = null;
+        let videoSourceNode = null;
+
+        // Playlist State
+        let playlist = []; // Array of { name, url, isVideo, type }
+        let currentPlaylistIndex = -1;
+
+        // Connect media elements to audio context analyser
+        function initMediaAnalyserConnection() {
+            const ctx = getAudioContext();
+            try {
+                if (!audioSourceNode) {
+                    audioSourceNode = ctx.createMediaElementSource(audioPlayer);
+                    audioSourceNode.connect(mainAnalyser);
+                }
+                if (!videoSourceNode) {
+                    videoSourceNode = ctx.createMediaElementSource(videoPlayer);
+                    videoSourceNode.connect(mainAnalyser);
+                }
+            } catch(e) {
+                // Audio element source connected
+            }
+        }
+
+        // Render Playlist UI
+        function renderPlaylistUI() {
+            if (playlist.length === 0) {
+                playlistContainer.classList.add('hidden');
+                playlistCount.textContent = '0';
+                playlistItemsList.innerHTML = '';
+                return;
+            }
+
+            playlistContainer.classList.remove('hidden');
+            playlistCount.textContent = playlist.length;
+            playlistItemsList.innerHTML = '';
+
+            playlist.forEach((item, idx) => {
+                const li = document.createElement('li');
+                const isActive = idx === currentPlaylistIndex;
+                
+                li.className = `flex justify-between items-center p-2 rounded-xl border transition-all duration-200 group ${
+                    isActive 
+                        ? 'bg-sky-500/25 border-sky-400/60 text-sky-100 shadow-md shadow-sky-500/10' 
+                        : 'bg-black/30 border-white/5 hover:bg-white/10 text-slate-200 hover:border-white/20'
+                }`;
+
+                const typeBadge = item.isVideo 
+                    ? '<span class="text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/30 px-1.5 py-0.5 rounded shrink-0 font-mono font-medium">MP4</span>' 
+                    : '<span class="text-[10px] bg-sky-500/20 text-sky-300 border border-sky-500/30 px-1.5 py-0.5 rounded shrink-0 font-mono font-medium">MP3</span>';
+
+                const iconClass = isActive 
+                    ? 'fa-solid fa-volume-high text-sky-400 animate-pulse' 
+                    : (item.isVideo ? 'fa-solid fa-film text-amber-400/80' : 'fa-solid fa-music text-sky-400/80');
+
+                li.innerHTML = `
+                    <div class="flex items-center space-x-2.5 truncate cursor-pointer flex-1 min-w-0 mr-2" onclick="playPlaylistItem(${idx})" title="${item.name}">
+                        <span class="text-[11px] font-mono ${isActive ? 'text-sky-300 font-bold' : 'text-slate-400'} w-5 shrink-0 text-right">${idx + 1}.</span>
+                        <div class="w-6 h-6 rounded-lg ${isActive ? 'bg-sky-500/30' : 'bg-white/5'} flex items-center justify-center shrink-0">
+                            <i class="${iconClass} text-xs"></i>
+                        </div>
+                        <span class="truncate text-xs ${isActive ? 'font-semibold text-sky-200' : 'font-normal text-slate-200 group-hover:text-white'}">${item.name}</span>
+                        ${typeBadge}
+                    </div>
+                    <button onclick="removePlaylistItem(${idx}, event)" title="Hapus dari daftar" class="w-6 h-6 rounded-lg text-slate-400 hover:text-rose-300 hover:bg-rose-500/20 transition flex items-center justify-center shrink-0">
+                        <i class="fa-solid fa-xmark text-xs"></i>
+                    </button>
+                `;
+                playlistItemsList.appendChild(li);
+            });
+
+            // Auto-scroll to active track in playlist
+            if (currentPlaylistIndex >= 0 && playlistItemsList.children[currentPlaylistIndex]) {
+                playlistItemsList.children[currentPlaylistIndex].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        }
+
+        // Play specific track from playlist
+        window.playPlaylistItem = function(index) {
+            if (index < 0 || index >= playlist.length) return;
+
+            getAudioContext();
+            initMediaAnalyserConnection();
+
+            stopDemoLullaby();
+            btnDemoMusic.classList.remove('bg-indigo-500/40', 'text-indigo-200');
+            demoMusicText.textContent = "Musik Demo Relaksasi";
+
+            currentPlaylistIndex = index;
+            const item = playlist[index];
+            mediaTitle.textContent = item.name;
+
+            if (item.isVideo) {
+                isVideoMode = true;
+                videoPreviewWrapper.classList.remove('hidden');
+                videoPlayer.src = item.url;
+                audioPlayer.src = '';
+                videoPlayer.volume = mediaVolumeSlider.value / 100;
+                videoPlayer.play();
+                if (isVideoBgActive) {
+                    bgVideo.src = item.url;
+                    bgVideo.play();
+                }
+            } else {
+                isVideoMode = false;
+                videoPreviewWrapper.classList.add('hidden');
+                videoPlayer.src = '';
+                if (isVideoBgActive) {
+                    bgVideo.classList.add('hidden');
+                    bgVideo.pause();
+                }
+                audioPlayer.src = item.url;
+                audioPlayer.volume = mediaVolumeSlider.value / 100;
+                audioPlayer.play();
+            }
+
+            mediaPlayIcon.className = 'fa-solid fa-pause text-lg ml-0.5';
+            renderPlaylistUI();
+        };
+
+        // Remove single track from playlist
+        window.removePlaylistItem = function(index, event) {
+            if (event) event.stopPropagation();
+            if (index < 0 || index >= playlist.length) return;
+
+            const wasPlaying = (index === currentPlaylistIndex);
+            playlist.splice(index, 1);
+
+            if (playlist.length === 0) {
+                currentPlaylistIndex = -1;
+                stopMediaPlayback();
+                mediaTitle.textContent = "Pilih beberapa file MP3/MP4 atau jalankan Musik Demo.";
+            } else if (wasPlaying) {
+                if (index >= playlist.length) {
+                    currentPlaylistIndex = 0;
+                } else {
+                    currentPlaylistIndex = index;
+                }
+                playPlaylistItem(currentPlaylistIndex);
+            } else if (index < currentPlaylistIndex) {
+                currentPlaylistIndex--;
+            }
+
+            renderPlaylistUI();
+        };
+
+        // Clear all tracks
+        btnClearPlaylist.addEventListener('click', () => {
+            playlist = [];
+            currentPlaylistIndex = -1;
+            stopMediaPlayback();
+            mediaTitle.textContent = "Pilih beberapa file MP3/MP4 atau jalankan Musik Demo.";
+            renderPlaylistUI();
+        });
+
+        // Next Track
+        function playNextTrack() {
+            if (playlist.length === 0) return;
+            const nextIdx = (currentPlaylistIndex + 1) % playlist.length;
+            playPlaylistItem(nextIdx);
+        }
+
+        // Previous Track
+        function playPrevTrack() {
+            if (playlist.length === 0) return;
+            const prevIdx = (currentPlaylistIndex - 1 + playlist.length) % playlist.length;
+            playPlaylistItem(prevIdx);
+        }
+
+        btnMediaNext.addEventListener('click', playNextTrack);
+        btnMediaPrev.addEventListener('click', playPrevTrack);
+
+        // Auto-play next track when audio or video ends
+        audioPlayer.addEventListener('ended', playNextTrack);
+        videoPlayer.addEventListener('ended', playNextTrack);
+
+        // Demo music click handler
+        btnDemoMusic.addEventListener('click', () => {
+            getAudioContext();
+            if (!isDemoPlaying) {
+                stopMediaPlayback();
+                startDemoLullaby();
+                btnDemoMusic.classList.add('bg-indigo-500/40', 'text-indigo-200');
+                demoMusicText.textContent = "Hentikan Demo";
+                mediaTitle.textContent = "Memutar: Melodi Pengantar Tidur (Demo Sintetis)";
+                mediaPlayIcon.className = 'fa-solid fa-pause text-lg ml-0.5';
+                currentPlaylistIndex = -1;
+                renderPlaylistUI();
+            } else {
+                stopDemoLullaby();
+                btnDemoMusic.classList.remove('bg-indigo-500/40', 'text-indigo-200');
+                demoMusicText.textContent = "Musik Demo Relaksasi";
+                mediaTitle.textContent = "Pilih beberapa file MP3/MP4 atau jalankan Musik Demo.";
+                mediaPlayIcon.className = 'fa-solid fa-play text-lg ml-0.5';
+            }
+        });
+
+        function stopMediaPlayback() {
+            audioPlayer.pause();
+            videoPlayer.pause();
+            mediaPlayIcon.className = 'fa-solid fa-play text-lg ml-0.5';
+        }
+
+        // Multiple File Input Handler
+        mediaInput.addEventListener('change', (e) => {
+            getAudioContext();
+            initMediaAnalyserConnection();
+
+            const files = Array.from(e.target.files);
+            if (!files || files.length === 0) return;
+
+            stopDemoLullaby();
+            btnDemoMusic.classList.remove('bg-indigo-500/40', 'text-indigo-200');
+            demoMusicText.textContent = "Musik Demo Relaksasi";
+
+            const startIndex = playlist.length;
+
+            files.forEach(file => {
+                const isVid = file.type.startsWith('video/');
+                playlist.push({
+                    name: file.name,
+                    url: URL.createObjectURL(file),
+                    isVideo: isVid,
+                    type: file.type
+                });
+            });
+
+            renderPlaylistUI();
+
+            // Automatically start playing the newly added track if nothing was playing
+            if (currentPlaylistIndex === -1 || (audioPlayer.paused && videoPlayer.paused)) {
+                playPlaylistItem(startIndex);
+            }
+
+            // Reset input so same files can be chosen again if needed
+            mediaInput.value = '';
+        });
+
+        // Volume Slider Logic
+        mediaVolumeSlider.addEventListener('input', (e) => {
+            const val = e.target.value / 100;
+            audioPlayer.volume = val;
+            videoPlayer.volume = val;
+            mediaVolText.textContent = `${e.target.value}%`;
+
+            if (demoMasterGain) {
+                demoMasterGain.gain.value = val * 0.3;
+            }
+
+            if (val === 0) {
+                mediaMuteIcon.className = 'fa-solid fa-volume-xmark text-rose-400';
+            } else if (val < 0.5) {
+                mediaMuteIcon.className = 'fa-solid fa-volume-low text-sky-400';
+            } else {
+                mediaMuteIcon.className = 'fa-solid fa-volume-high text-sky-400';
+            }
+        });
+
+        btnMediaMute.addEventListener('click', () => {
+            if (audioPlayer.volume > 0 || videoPlayer.volume > 0) {
+                lastVolumeValue = mediaVolumeSlider.value;
+                mediaVolumeSlider.value = 0;
+            } else {
+                mediaVolumeSlider.value = lastVolumeValue || 80;
+            }
+            mediaVolumeSlider.dispatchEvent(new Event('input'));
+        });
+
+        mediaInput.addEventListener('change', (e) => {
+            getAudioContext();
+            initMediaAnalyserConnection();
+
+            const file = e.target.files[0];
+            if (!file) return;
+
+            stopDemoLullaby();
+            btnDemoMusic.classList.remove('bg-indigo-500/40', 'text-indigo-200');
+            demoMusicText.textContent = "Musik Demo Relaksasi";
+
+            const fileUrl = URL.createObjectURL(file);
+            mediaTitle.textContent = file.name;
+
+            if (file.type.startsWith('video/')) {
+                isVideoMode = true;
+                videoPreviewWrapper.classList.remove('hidden');
+                videoPlayer.src = fileUrl;
+                audioPlayer.src = '';
+                videoPlayer.volume = mediaVolumeSlider.value / 100;
+                videoPlayer.play();
+                mediaPlayIcon.className = 'fa-solid fa-pause text-lg ml-0.5';
+            } else {
+                isVideoMode = false;
+                videoPreviewWrapper.classList.add('hidden');
+                videoPlayer.src = '';
+                bgVideo.classList.add('hidden');
+                audioPlayer.src = fileUrl;
+                audioPlayer.volume = mediaVolumeSlider.value / 100;
+                audioPlayer.play();
+                mediaPlayIcon.className = 'fa-solid fa-pause text-lg ml-0.5';
+            }
+        });
+
+        btnMediaPlay.addEventListener('click', () => {
+            getAudioContext();
+            initMediaAnalyserConnection();
+
+            if (isDemoPlaying) {
+                stopDemoLullaby();
+                btnDemoMusic.classList.remove('bg-indigo-500/40', 'text-indigo-200');
+                demoMusicText.textContent = "Musik Demo Relaksasi";
+                mediaPlayIcon.className = 'fa-solid fa-play text-lg ml-0.5';
+                return;
+            }
+
+            const activePlayer = isVideoMode ? videoPlayer : audioPlayer;
+            if (!activePlayer.src) {
+                btnDemoMusic.click();
+                return;
+            }
+
+            if (activePlayer.paused) {
+                activePlayer.play();
+                mediaPlayIcon.className = 'fa-solid fa-pause text-lg ml-0.5';
+            } else {
+                activePlayer.pause();
+                mediaPlayIcon.className = 'fa-solid fa-play text-lg ml-0.5';
+            }
+        });
+
+        // Time updates
+        [audioPlayer, videoPlayer].forEach(player => {
+            player.addEventListener('timeupdate', () => {
+                if (player.duration) {
+                    const progress = (player.currentTime / player.duration) * 100;
+                    mediaSeek.value = progress;
+                    mediaCurrentTime.textContent = formatTime(player.currentTime);
+                    mediaDuration.textContent = formatTime(player.duration);
+                }
+            });
+        });
+
+        mediaSeek.addEventListener('input', () => {
+            const activePlayer = isVideoMode ? videoPlayer : audioPlayer;
+            if (activePlayer.duration) {
+                activePlayer.currentTime = (mediaSeek.value / 100) * activePlayer.duration;
+            }
+        });
+
+        btnVideoBgToggle.addEventListener('click', () => {
+            if (!videoPlayer.src) return;
+            if (!isVideoBgActive) {
+                bgVideo.src = videoPlayer.src;
+                bgVideo.currentTime = videoPlayer.currentTime;
+                bgVideo.classList.remove('hidden');
+                bgVideo.play();
+                btnVideoBgToggle.classList.add('bg-sky-500');
+                isVideoBgActive = true;
+            } else {
+                bgVideo.classList.add('hidden');
+                bgVideo.pause();
+                btnVideoBgToggle.classList.remove('bg-sky-500');
+                isVideoBgActive = false;
+            }
+        });
+
+        function formatTime(seconds) {
+            const m = Math.floor(seconds / 60);
+            const s = Math.floor(seconds % 60);
+            return `${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
+        }
+
+        // --- AUDIO SPECTRUM VISUALIZER CANVAS ANIMATION ---
+        const specCanvas = document.getElementById('spectrum-canvas');
+        const specCtx = specCanvas.getContext('2d');
+        const btnSpectrumStyle = document.getElementById('btn-spectrum-style');
+        const spectrumModeLabel = document.getElementById('spectrum-mode-label');
+
+        let spectrumModes = ['Batang Neon', 'Gelombang Glow', 'Matahari Senja'];
+        let currentModeIndex = 0;
+        let idlePhase = 0;
+
+        btnSpectrumStyle.addEventListener('click', () => {
+            currentModeIndex = (currentModeIndex + 1) % spectrumModes.length;
+            spectrumModeLabel.textContent = spectrumModes[currentModeIndex];
+        });
+
+        function resizeSpectrumCanvas() {
+            if (specCanvas.clientWidth > 0 && specCanvas.clientHeight > 0) {
+                specCanvas.width = specCanvas.clientWidth;
+                specCanvas.height = specCanvas.clientHeight;
+            }
+        }
+        window.addEventListener('resize', resizeSpectrumCanvas);
+
+        function drawSpectrum() {
+            requestAnimationFrame(drawSpectrum);
+
+            if (specCanvas.width === 0 || specCanvas.height === 0) {
+                resizeSpectrumCanvas();
+            }
+
+            specCtx.clearRect(0, 0, specCanvas.width, specCanvas.height);
+
+            const bufferLength = mainAnalyser ? mainAnalyser.frequencyBinCount : 32;
+            const dataArray = new Uint8Array(bufferLength);
+
+            let hasSignal = false;
+            if (mainAnalyser) {
+                mainAnalyser.getByteFrequencyData(dataArray);
+                for (let i = 0; i < bufferLength; i++) {
+                    if (dataArray[i] > 2) {
+                        hasSignal = true;
+                        break;
+                    }
+                }
+            }
+
+            // Idle ambient wave generator if sound is silent or inactive
+            if (!hasSignal) {
+                idlePhase += 0.03;
+                for (let i = 0; i < bufferLength; i++) {
+                    dataArray[i] = Math.max(8, Math.sin(idlePhase + i * 0.25) * 25 + 28);
+                }
+            }
+
+            const width = specCanvas.width || 300;
+            const height = specCanvas.height || 100;
+
+            if (spectrumModes[currentModeIndex] === 'Batang Neon') {
+                const barWidth = (width / bufferLength) * 1.6;
+                let x = 0;
+
+                for (let i = 0; i < bufferLength; i++) {
+                    const barHeight = (dataArray[i] / 255) * height * 0.85;
+
+                    const gradient = specCtx.createLinearGradient(0, height, 0, 0);
+                    gradient.addColorStop(0, 'rgba(56, 189, 248, 0.2)');
+                    gradient.addColorStop(0.5, 'rgba(56, 189, 248, 0.8)');
+                    gradient.addColorStop(1, 'rgba(129, 140, 248, 1)');
+
+                    specCtx.fillStyle = gradient;
+                    specCtx.beginPath();
+                    specCtx.roundRect(x, height - barHeight - 2, Math.max(barWidth - 2, 2), barHeight + 2, [4, 4, 0, 0]);
+                    specCtx.fill();
+
+                    x += barWidth;
+                }
+            } else if (spectrumModes[currentModeIndex] === 'Gelombang Glow') {
+                specCtx.beginPath();
+                specCtx.lineWidth = 3;
+                specCtx.strokeStyle = '#38bdf8';
+                specCtx.shadowBlur = 12;
+                specCtx.shadowColor = '#38bdf8';
+
+                const sliceWidth = width / bufferLength;
+                let x = 0;
+
+                for (let i = 0; i < bufferLength; i++) {
+                    const v = dataArray[i] / 255.0;
+                    const y = height - (v * height * 0.8) - 5;
+
+                    if (i === 0) specCtx.moveTo(x, y);
+                    else specCtx.lineTo(x, y);
+
+                    x += sliceWidth;
+                }
+
+                specCtx.lineTo(width, height);
+                specCtx.stroke();
+                specCtx.shadowBlur = 0;
+            } else if (spectrumModes[currentModeIndex] === 'Matahari Senja') {
+                const centerX = width / 2;
+                const centerY = height / 2;
+                const baseRadius = 18;
+
+                let avgFreq = 0;
+                for (let i = 0; i < bufferLength; i++) avgFreq += dataArray[i];
+                avgFreq = avgFreq / bufferLength;
+
+                const radius = baseRadius + (avgFreq / 255) * 16;
+
+                specCtx.beginPath();
+                specCtx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+                specCtx.fillStyle = 'rgba(251, 146, 60, 0.85)';
+                specCtx.shadowBlur = 18;
+                specCtx.shadowColor = '#fb923c';
+                specCtx.fill();
+                specCtx.shadowBlur = 0;
+
+                for (let i = 0; i < bufferLength; i += 2) {
+                    const angle = (i / bufferLength) * Math.PI * 2;
+                    const rayLength = (dataArray[i] / 255) * 28;
+
+                    const x1 = centerX + Math.cos(angle) * (radius + 2);
+                    const y1 = centerY + Math.sin(angle) * (radius + 2);
+                    const x2 = centerX + Math.cos(angle) * (radius + 2 + rayLength);
+                    const y2 = centerY + Math.sin(angle) * (radius + 2 + rayLength);
+
+                    specCtx.beginPath();
+                    specCtx.moveTo(x1, y1);
+                    specCtx.lineTo(x2, y2);
+                    specCtx.strokeStyle = 'rgba(56, 189, 248, 0.7)';
+                    specCtx.lineWidth = 2;
+                    specCtx.stroke();
+                }
+            }
+        }
+
+        drawSpectrum();
+
+        // --- CLOCK & DATE LOGIC WITH COLOR VARIATION ---
+        // Helper function to color the initial letter of each word
+        function colorizeWords(text, colors = ['text-sky-400', 'text-amber-300', 'text-emerald-300', 'text-purple-300', 'text-rose-300']) {
+            if (!text) return '';
+            const words = text.split(' ');
+            return words.map((word, index) => {
+                if (!word) return '';
+                const color = colors[index % colors.length];
+                const firstChar = word.charAt(0);
+                const restOfWord = word.slice(1);
+                return `<span class="${color} font-bold">${firstChar}</span>${restOfWord}`;
+            }).join(' ');
+        }
+
+        function updateClock() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+
+            document.getElementById('clock').innerHTML = `${hours}:${minutes}<span class="text-2xl md:text-4xl text-sky-300/80 font-light ml-2">${seconds}</span>`;
+
+            // Indonesian Date Format
+            const dayName = now.toLocaleDateString('id-ID', { weekday: 'long' });
+            const dayNum = now.getDate();
+            const monthName = now.toLocaleDateString('id-ID', { month: 'long' });
+            const yearNum = now.getFullYear();
+
+            // Formatted string with multi-color word prefixes
+            const colorDay = `<span class="text-amber-300 font-semibold">${dayName.charAt(0)}</span>${dayName.slice(1)}`;
+            const colorNum = `<span class="text-sky-400 font-semibold">${dayNum}</span>`;
+            const colorMonth = `<span class="text-emerald-300 font-semibold">${monthName.charAt(0)}</span>${monthName.slice(1)}`;
+            const colorYear = `<span class="text-purple-300 font-semibold">${yearNum}</span>`;
+
+            const fullDateHtml = `${colorDay}, ${colorNum} ${colorMonth} ${colorYear}`;
+
+            const headerDateElem = document.getElementById('header-date-text');
+            if (headerDateElem) {
+                headerDateElem.innerHTML = fullDateHtml;
+            }
+
+            const heroDateElem = document.getElementById('hero-day-date');
+            if (heroDateElem) {
+                heroDateElem.innerHTML = fullDateHtml;
+            }
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // Change Quote when Clock is Clicked
+        let quoteIndex = 0;
+        document.getElementById('clock-container').addEventListener('click', () => {
+            quoteIndex = (quoteIndex + 1) % BEDTIME_QUOTES.length;
+            document.getElementById('quote-text').textContent = BEDTIME_QUOTES[quoteIndex];
+        });
+
+        // --- LANDSCAPE TRANSITIONS ---
+        function setBackgroundImage(key) {
+            const url = LANDSCAPE_PRESETS[key] || LANDSCAPE_PRESETS['rain-cabin'];
+            const slide1 = document.getElementById('bg-slide-1');
+            const slide2 = document.getElementById('bg-slide-2');
+
+            if (activeBgSlide === 1) {
+                slide2.style.backgroundImage = `url('${url}')`;
+                slide2.classList.add('active');
+                slide1.classList.remove('active');
+                activeBgSlide = 2;
+            } else {
+                slide1.style.backgroundImage = `url('${url}')`;
+                slide1.classList.add('active');
+                slide2.classList.remove('active');
+                activeBgSlide = 1;
+            }
+        }
+
+        function nextLandscape() {
+            currentBgIndex = (currentBgIndex + 1) % bgKeys.length;
+            setBackgroundImage(bgKeys[currentBgIndex]);
+        }
+
+        function startAutoLandscape() {
+            if (autoBgInterval) clearInterval(autoBgInterval);
+            autoBgInterval = setInterval(nextLandscape, 12000); // 12 seconds per slide
+        }
+
+        function stopAutoLandscape() {
+            if (autoBgInterval) clearInterval(autoBgInterval);
+        }
+
+        document.getElementById('auto-bg-toggle').addEventListener('change', (e) => {
+            autoBgEnabled = e.target.checked;
+            if (autoBgEnabled) startAutoLandscape();
+            else stopAutoLandscape();
+        });
+
+        // Preset image clicks
+        document.querySelectorAll('.bg-card-preset').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const bgKey = btn.getAttribute('data-bg');
+                setBackgroundImage(bgKey);
+            });
+        });
+
+        // Initial setup
+        document.getElementById('bg-slide-1').style.backgroundImage = `url('${LANDSCAPE_PRESETS['rain-cabin']}')`;
+        if (autoBgEnabled) startAutoLandscape();
+
+        // --- TAB NAVIGATION LOGIC ---
+        const tabBtns = document.querySelectorAll('.tab-btn');
+        const tabPanels = document.querySelectorAll('.tab-panel');
+
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                tabBtns.forEach(b => {
+                    b.classList.remove('bg-sky-500/20', 'text-sky-300', 'border-sky-400/30');
+                    b.classList.add('text-slate-300');
+                });
+                tabPanels.forEach(p => p.classList.add('hidden'));
+
+                btn.classList.add('bg-sky-500/20', 'text-sky-300', 'border-sky-400/30');
+                btn.classList.remove('text-slate-300');
+
+                const targetPanelId = btn.id.replace('tab-btn-', 'panel-');
+                document.getElementById(targetPanelId).classList.remove('hidden');
+
+                if (targetPanelId === 'panel-media') {
+                    setTimeout(resizeSpectrumCanvas, 50);
+                }
+            });
+        });
+
+        // --- AMBIENT SOUND SLIDERS BINDING ---
+        const ambientTypes = ['rain', 'wind', 'thunder', 'waves', 'fire', 'crickets'];
+
+        ambientTypes.forEach(type => {
+            const slider = document.getElementById(`vol-${type}`);
+            const textVal = document.getElementById(`vol-txt-${type}`);
+            const btnToggle = document.getElementById(`btn-sound-${type}`);
+
+            slider.addEventListener('input', (e) => {
+                const val = e.target.value;
+                textVal.textContent = `${val}%`;
+                setAmbientVolume(type, val);
+
+                if (val > 0) {
+                    btnToggle.classList.add('bg-sky-500/30', 'text-sky-300');
+                } else {
+                    btnToggle.classList.remove('bg-sky-500/30', 'text-sky-300');
+                }
+            });
+
+            btnToggle.addEventListener('click', () => {
+                if (slider.value > 0) {
+                    slider.value = 0;
+                } else {
+                    slider.value = 50;
+                }
+                slider.dispatchEvent(new Event('input'));
+            });
+        });
+
+        document.getElementById('btn-stop-all-sounds').addEventListener('click', () => {
+            ambientTypes.forEach(type => {
+                const slider = document.getElementById(`vol-${type}`);
+                slider.value = 0;
+                slider.dispatchEvent(new Event('input'));
+            });
+        });
+
+        // --- SLEEP TIMER LOGIC ---
+        const timerBadge = document.getElementById('timer-badge');
+        const timerCountdown = document.getElementById('timer-countdown');
+        const timerStatusText = document.getElementById('timer-status-text');
+        const btnCancelTimer = document.getElementById('btn-cancel-timer');
+        const screenDimmer = document.getElementById('screen-dimmer');
+
+        function startSleepTimer(minutes) {
+            clearInterval(sleepTimerInterval);
+            timerSecondsRemaining = minutes * 60;
+
+            timerBadge.classList.remove('hidden');
+            timerBadge.classList.add('flex');
+            btnCancelTimer.classList.remove('hidden');
+            timerStatusText.textContent = `Aktif (${minutes} menit)`;
+
+            sleepTimerInterval = setInterval(() => {
+                timerSecondsRemaining--;
+
+                const m = Math.floor(timerSecondsRemaining / 60);
+                const s = timerSecondsRemaining % 60;
+                timerCountdown.textContent = `${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
+
+                // Slowly dim screen as timer gets close to 0 (last 2 minutes)
+                if (timerSecondsRemaining <= 120) {
+                    const dimOpacity = (120 - timerSecondsRemaining) / 120;
+                    screenDimmer.style.opacity = dimOpacity * 0.85; // Dim to max 85% opacity
+                }
+
+                if (timerSecondsRemaining <= 0) {
+                    clearInterval(sleepTimerInterval);
+                    timerStatusText.textContent = "Timer selesai. Meredupkan...";
+                    screenDimmer.style.opacity = '1';
+
+                    // Fade out all audio
+                    ambientTypes.forEach(type => {
+                        const slider = document.getElementById(`vol-${type}`);
+                        slider.value = 0;
+                        slider.dispatchEvent(new Event('input'));
+                    });
+                    audioPlayer.pause();
+                    videoPlayer.pause();
+                }
+            }, 1000);
+        }
+
+        document.querySelectorAll('.btn-timer-preset').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const mins = parseInt(btn.getAttribute('data-minutes'));
+                startSleepTimer(mins);
+            });
+        });
+
+        document.getElementById('btn-start-custom-timer').addEventListener('click', () => {
+            const val = parseInt(document.getElementById('custom-timer-input').value);
+            if (val && val > 0) {
+                startSleepTimer(val);
+            }
+        });
+
+        btnCancelTimer.addEventListener('click', () => {
+            clearInterval(sleepTimerInterval);
+            timerBadge.classList.add('hidden');
+            timerBadge.classList.remove('flex');
+            btnCancelTimer.classList.add('hidden');
+            timerStatusText.textContent = "Timer mati";
+            screenDimmer.style.opacity = '0';
+        });
+
+        // --- UI HIDE TOGGLE & FULLSCREEN ---
+        const uiElements = document.querySelectorAll('.ui-element');
+        const btnToggleUi = document.getElementById('btn-toggle-ui');
+
+        function toggleUiVisibility() {
+            isUiHidden = !isUiHidden;
+            uiElements.forEach(el => {
+                if (isUiHidden) {
+                    el.classList.add('ui-hidden');
+                } else {
+                    el.classList.remove('ui-hidden');
+                }
+            });
+        }
+
+        btnToggleUi.addEventListener('click', toggleUiVisibility);
+
+        // Click on background image to restore UI if hidden
+        document.getElementById('bg-container').addEventListener('click', () => {
+            if (isUiHidden) toggleUiVisibility();
+        });
+
+        // Fullscreen Toggle
+        document.getElementById('btn-fullscreen').addEventListener('click', () => {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(() => {});
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        });
+
+        // --- STARFIELD CANVAS GENERATOR FOR NIGHT AMBIENCE ---
+        const canvas = document.getElementById('stars-canvas');
+        const ctx = canvas.getContext('2d');
+        let stars = [];
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            stars = [];
+            for (let i = 0; i < 80; i++) {
+                stars.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    radius: Math.random() * 1.5,
+                    alpha: Math.random(),
+                    speed: 0.005 + Math.random() * 0.015
+                });
+            }
+        }
+
+        function drawStars() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#ffffff';
+
+            stars.forEach(star => {
+                star.alpha += star.speed;
+                if (star.alpha > 1 || star.alpha < 0) star.speed = -star.speed;
+
+                ctx.globalAlpha = Math.abs(star.alpha);
+                ctx.beginPath();
+                ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            requestAnimationFrame(drawStars);
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+        drawStars();
+    </script>
+</body>
+</html>
